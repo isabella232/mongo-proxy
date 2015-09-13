@@ -27,6 +27,7 @@ class MongoProxy
     }
     @front_callbacks = []
     @back_callbacks = []
+    @server_response_callbacks = []
 
     # apply argument config to the default values
     (config || []).each do |k, v|
@@ -89,6 +90,10 @@ class MongoProxy
     @back_callbacks << block
   end
 
+  def add_callback_to_server_response(&block)
+    @server_response_callbacks << block
+  end
+
   private
 
   def callbacks(conn)
@@ -141,10 +146,21 @@ class MongoProxy
 
     # messages back from the server
     conn.on_response do |backend, resp|
-      if @config[:verbose]
+      if @config[:verbose] or not @server_response_callbacks.empty?
         _, msg = WireMongo::receive(resp)
-        @log.info 'from server'
-        @log.info msg
+
+        if @config[:verbose]
+          @log.info 'from server'
+          @log.info msg
+        end
+
+        @server_response_callbacks.each do |cb|
+          msg = cb.call(conn, msg)
+          break unless msg
+        end
+        next unless msg
+
+        resp = WireMongo::write(msg)
       end
 
       resp
