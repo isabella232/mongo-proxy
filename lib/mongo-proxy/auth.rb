@@ -117,6 +117,9 @@ class AuthMongo
             return true, nil
           end
 
+        elsif (query['getnonce'] || query['authenticate']) == 1
+          return true, nil
+
         # allow ismaster query, listDatabases query
         elsif db == 'admin'
           if @@admin_cmd_whitelist.include?(query)
