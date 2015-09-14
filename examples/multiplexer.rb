@@ -1,21 +1,13 @@
 require 'mongo-proxy'
+require 'yaml'
 
 config = {
-    :client_port => 29017,
-    :server_port => 27017,
+    :client_port => 27017,
+    :server_port => 27000,
     :read_only => true,
 }
 
-mappings = {
-    'service0' => {
-        :server_host => '127.0.0.1',
-        :server_port => 27000,
-    },
-    'service1' => {
-        :server_host => '127.0.0.1',
-        :server_port => 27017,
-    },
-}
+mappings = YAML.load_file('multiplexer.yaml')
 
 list_db_request = nil
 
@@ -35,8 +27,8 @@ proxy.add_callback_to_back do |conn, msg|
 
     if database != 'admin' and collection != '$cmd'
         conn.server(:srv, {
-          :host => mappings[database][:server_host],
-          :port => mappings[database][:server_port]})
+          :host => mappings[database]['server_host'],
+          :port => mappings[database]['server_port']})
     end
 
     msg

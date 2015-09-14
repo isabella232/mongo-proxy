@@ -1,0 +1,11 @@
+service0:
+    server_host: '127.0.0.1'
+    server_port: 27000
+    username: 'service0-readOnly'
+    password: 'super-sekrits'
+
+service1:
+    server_host: '127.0.0.1'
+    server_port: 27001
+    username: 'service1-readOnly'
+    password: 'unguessabl3'
