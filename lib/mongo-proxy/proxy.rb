@@ -12,6 +12,8 @@ require 'timeout'
 class MongoProxy
   VERSION = '1.0.1'
 
+  attr_accessor :auth_server
+
   def initialize(config = nil)
     # default config values
     @config = {
@@ -25,9 +27,11 @@ class MongoProxy
       :logger => nil,              # Use this object as the logger instead of creating one.
       :debug => false              # Print log lines in a more human-readible format.
     }
+    @auth_server = nil
     @front_callbacks = []
     @back_callbacks = []
     @server_response_callbacks = []
+    @server_post_response_callbacks = []
 
     # apply argument config to the default values
     (config || []).each do |k, v|
@@ -94,10 +98,14 @@ class MongoProxy
     @server_response_callbacks << block
   end
 
+  def add_callback_to_server_post_response(&block)
+    @server_post_response_callbacks << block
+  end
+
   private
 
   def callbacks(conn)
-    conn.server(:srv, {
+    @auth_server = conn.server(:srv, {
       :host => @config[:server_host],
       :port => @config[:server_port]})
 
@@ -161,6 +169,10 @@ class MongoProxy
         next unless msg
 
         resp = WireMongo::write(msg)
+
+        @server_post_response_callbacks.each do |cb|
+            cb.call(conn, msg)
+        end
       end
 
       resp
